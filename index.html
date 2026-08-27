@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wattpad-style Digital Novel Platform - Master Admin v6</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --dark-bg: #0f172a;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-wattpad {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-wattpad:active, .btn-wattpad:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .auth-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+        .auth-card h2 {
+            color: var(--dark-bg);
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .auth-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .auth-card button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .library-container, .settings-container, .upload-container, .admin-container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 15px;
+            border-left: 4px solid white;
+            padding-left: 10px;
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            width: 100%;
+        }
+
+        .book-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .book-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .book-cover-art {
+            height: 180px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 12px;
+            cursor: pointer;
+            background-size: cover !important;
+            background-position: center !important;
+        }
+
+        .book-info {
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .book-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0 0 2px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            cursor: pointer;
+        }
+
+        .book-author {
+            font-size: 11px;
+            color: #64748b;
+            margin: 0 0 6px 0;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 4px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 6px;
+        }
+
+        .card-actions button {
+            flex: 1;
+            padding: 5px 2px;
+            font-size: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-edit { background-color: #f59e0b; color: white; }
+        .btn-cover { background-color: #3b82f6; color: white; }
+        .btn-delete { background-color: #ef4444; color: white; }
+
+        .upload-section-box, .account-section-box, .admin-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .admin-table th, .admin-table td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        .admin-table th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        #readingView {
+            width: 100%;
+            max-width: 750px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .reader-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .reader-header h2 {
+            font-size: 20px;
+            color: var(--dark-bg);
+            margin: 0 0 5px 0;
+        }
+
+        .reader-header p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .reader-page-content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+            text-align: justify;
+            min-height: 350px;
+            word-break: break-word;
+        }
+
+        .reader-page-content h3 {
+            color: var(--primary-color);
+            font-size: 18px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+
+        .reader-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .reader-controls button {
+            padding: 10px 16px;
+            background-color: var(--dark-bg);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .reader-controls button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        span#reader-page-info {
+            color: #475569;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .books-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+            .navbar { padding: 10px 15px; }
+            #readingView { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay" class="hidden">
+        <div class="spinner"></div>
+        <p id="loadingText" style="font-size: 15px; font-weight: bold;">Naglo-load...</p>
+    </div>
+
+    <div class="navbar" id="navBarContainer">
+        <div class="logo" onclick="goToHome()">Wattnovel v6</div>
+        <div class="nav-right" id="navRight"></div>
+    </div>
+
+    <div class="main-content" id="mainContent">
+
+        <!-- Auth View -->
+        <div id="authView" class="auth-wrapper">
+            <div class="auth-card" id="loginCard">
+                <h2>Mag-log in (v6)</h2>
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button onclick="handleLogin()">Mag-log in</button>
+                <p id="errorMsg" style="color: #ef4444; font-size: 12px; margin-top: 10px;"></p>
+                <p style="font-size: 12px; margin-top: 15px;">Wala pang account? <a href="#" onclick="toggleAuthForm('register')" style="color: var(--primary-color);">Mag-register</a></p>
+            </div>
+
+            <div class="auth-card hidden" id="registerCard">
+                <h2>Gumawa ng Account</h2>
+                <input type="text" id="regUsername" placeholder="Bagong Username">
+                <input type="password" id="regPassword" placeholder="Bagong Password">
+                <button onclick="handleRegister()">I-register</button>
+                <p id="regMsg" style="color: #10b981; font-size: 12px; margin-top: 10px;"></p>
+                <p style="font-size: 12px; margin-top: 15px;">May account na? <a href="#" onclick="toggleAuthForm('login')" style="color: var(--primary-color);">Mag-log in</a></p>
+            </div>
+        </div>
+
+        <!-- Library View -->
+        <div id="libraryView" class="library-container hidden">
+            <div class="section-title">Mga Sikat na Kwento</div>
+            <div class="books-grid" id="booksGrid"></div>
+        </div>
+
+        <!-- Upload View -->
+        <div id="uploadView" class="upload-container hidden">
+            <div class="section-title">Mag-upload ng Bagong Kwento</div>
+            <div class="upload-section-box">
+                <div>
+                    <b>Word (.docx) at Cover Picture</b>
+                    <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Na-optimize para sa PC at Mobile.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #475569;">Word File (.docx):</label>
+                    <input type="file" id="wordFile" accept=".docx" style="font-size: 12px; width: 100%;">
+                    
+                    <label style="font-size: 11px; font-weight: bold; color: #475569;">Cover Picture (Opsyonal):</label>
+                    <input type="file" id="coverFile" accept="image/*" style="font-size: 12px; width: 100%;">
+                    
+                    <button class="btn-wattpad" style="width: 100%; margin-top: 10px;" onclick="handleUploadNewBook()">I-publish ang Kwento</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Super Admin View -->
+        <div id="adminView" class="admin-container hidden">
+            <div class="section-title">👑 Master Super Admin Control Panel (v6)</div>
+            
+            <div class="admin-box" style="background: rgba(255,255,255,0.98);">
+                <b>System Quick Commands</b>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-wattpad" style="background-color: #ef4444;" onclick="adminResetEntireSystem()">I-reset ang Buong Database</button>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <b>Pamamahala ng Lahat ng Users (Accounts)</b>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="adminUsersTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Role / Status</th>
+                                <th>Mga Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <b>Pamamahala ng Lahat ng Kwento (Master Books)</b>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="adminBooksTable">
+                        <thead>
+                            <tr>
+                                <th>Pamagat ng Kwento</th>
+                                <th>Author</th>
+                                <th>Pahina</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminBooksTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="settings-container hidden">
+            <div class="section-title">Account Settings</div>
+            <div class="account-section-box" id="settingsBoxContent"></div>
+        </div>
+
+        <!-- Reader View -->
+        <div id="readingView" class="hidden">
+            <div class="reader-header">
+                <h2 id="readerBookTitle">Pamagat ng Kwento</h2>
+                <p id="readerAuthor">Ni: Author</p>
+            </div>
+            
+            <div class="reader-page-content" id="readerContent"></div>
+
+            <div class="reader-controls">
+                <button id="prevBtn" onclick="changeReaderPage(-1)">❮ Nakaraan</button>
+                <span id="reader-page-info">1 / 1</span>
+                <button id="nextBtn" onclick="changeReaderPage(1)">Susunod ❯</button>
+                <button onclick="toggleFullScreen()" style="background-color: #3b82f6;">⛶ Fullscreen</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentOpenBookIndex = null;
+        let currentReaderPage = 0;
+
+        // Force initialize v6 storage to bypass mobile caching issues
+        if (!localStorage.getItem("usersList_v6")) {
+            const initialUsers = [
+                { user: "superadmin", pass: "admin123", role: "superadmin", status: "active" },
+                { user: "author", pass: "12345", role: "author", status: "active" }
+            ];
+            localStorage.setItem("usersList_v6", JSON.stringify(initialUsers));
+        }
+
+        if (!localStorage.getItem("booksLibrary_v6")) {
+            const defaultBooks = [
+                {
+                    title: "Ang Alamat ng Ating Pag-ibig",
+                    author: "author",
+                    coverBg: "linear-gradient(135deg, #6366f1, #a855f7)",
+                    pages: [
+                        `<h3>Kabanata 1</h3><p>Sa isang malayong nayon kung saan ang mga bituin ay tila kumikinang nang mas malapit...</p>`,
+                        `<h3>Kabanata 2</h3><p>Hindi inaasahan ni Juan na ang simpleng paglakad na iyon ay babago sa kanyang buhay.</p>`
+                    ]
+                }
+            ];
+            localStorage.setItem("booksLibrary_v6", JSON.stringify(defaultBooks));
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (document.getElementById("readingView").classList.contains("hidden")) return;
+            if (event.key === "ArrowLeft") changeReaderPage(-1);
+            else if (event.key === "ArrowRight") changeReaderPage(1);
+        });
+
+        function showLoading(text) {
+            document.getElementById("loadingText").textContent = text;
+            document.getElementById("loadingOverlay").classList.remove("hidden");
+        }
+
+        function hideLoading() {
+            document.getElementById("loadingOverlay").classList.add("hidden");
+        }
+
+        function toggleAuthForm(type) {
+            if (type === 'register') {
+                document.getElementById("loginCard").classList.add("hidden");
+                document.getElementById("registerCard").classList.remove("hidden");
+            } else {
+                document.getElementById("registerCard").classList.add("hidden");
+                document.getElementById("loginCard").classList.remove("hidden");
+            }
+        }
+
+        function handleRegister() {
+            const newU = document.getElementById("regUsername").value.trim();
+            const newP = document.getElementById("regPassword").value.trim();
+            const regMsg = document.getElementById("regMsg");
+
+            if (!newU || !newP) {
+                alert("Punan ang lahat ng espasyo!");
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem("usersList_v6"));
+            if (users.some(u => u.user === newU)) {
+                alert("May gumagamit na ng username na ito!");
+                return;
+            }
+
+            users.push({ user: newU, pass: newP, role: "reader", status: "reader" });
+            localStorage.setItem("usersList_v6", JSON.stringify(users));
+
+            regMsg.textContent = "Tagumpay ang paggawa ng account!";
+            setTimeout(() => toggleAuthForm('login'), 1500);
+        }
+
+        function handleLogin() {
+            const userInput = document.getElementById("username").value.trim();
+            const passInput = document.getElementById("password").value.trim();
+
+            if (!userInput || !passInput) {
+                document.getElementById("errorMsg").textContent = "Ilagay ang username at password!";
+                return;
+            }
+
+            showLoading("Nag-didirekta sa iyong library...");
+
+            setTimeout(() => {
+                let users = JSON.parse(localStorage.getItem("usersList_v6"));
+                const foundUser = users.find(u => u.user === userInput && u.pass === passInput);
+
+                hideLoading();
+
+                if (foundUser) {
+                    currentUser = foundUser;
+                    document.getElementById("errorMsg").textContent = "";
+                    goToHome();
+                } else {
+                    document.getElementById("errorMsg").textContent = "Maling username o password!";
+                }
+            }, 300);
+        }
+
+        function updateNavbar() {
+            const navRight = document.getElementById("navRight");
+            let actionHtml = "";
+            
+            if (currentUser.role === "author") {
+                actionHtml = `<button class="btn-wattpad" onclick="showUploadView()">+ Upload</button>`;
+            } else if (currentUser.role === "superadmin") {
+                actionHtml = `<button class="btn-wattpad" style="background-color: #f59e0b;" onclick="showAdminView()">👑 Master Admin</button>`;
+            }
+
+            navRight.innerHTML = `
+                ${actionHtml}
+                <button class="btn-outline" onclick="showSettingsView()" style="max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">⚙️ ${currentUser.user}</button>
+                <button class="btn-outline" onclick="handleLogout()">Logout</button>
+            `;
+        }
+
+        function goToHome() {
+            if (!currentUser) return;
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+
+            document.getElementById("authView").classList.add("hidden");
+            document.getElementById("readingView").classList.add("hidden");
+            document.getElementById("settingsView").classList.add("hidden");
+            document.getElementById("uploadView").classList.add("hidden");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("libraryView").classList.remove("hidden");
+            document.getElementById("navBarContainer").classList.remove("hidden");
+
+            updateNavbar();
+            renderBooksGrid();
+        }
+
+        function showUploadView() {
+            document.getElementById("libraryView").classList.add("hidden");
+            document.getElementById("settingsView").classList.add("hidden");
+            document.getElementById("readingView").classList.add("hidden");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("uploadView").classList.remove("hidden");
+
+            const navRight = document.getElementById("navRight");
+            navRight.innerHTML = `
+                <button class="btn-outline" onclick="goToHome()">← Library</button>
+                <button class="btn-outline" onclick="handleLogout()">Logout</button>
+            `;
+        }
+
+        function showAdminView() {
+            document.getElementById("libraryView").classList.add("hidden");
+            document.getElementById("settingsView").classList.add("hidden");
+            document.getElementById("readingView").classList.add("hidden");
+            document.getElementById("uploadView").classList.add("hidden");
+            document.getElementById("adminView").classList.remove("hidden");
+
+            const navRight = document.getElementById("navRight");
+            navRight.innerHTML = `
+                <button class="btn-outline" onclick="goToHome()">← Library</button>
+                <button class="btn-outline" onclick="handleLogout()">Logout</button>
+            `;
+
+            renderMasterAdminTables();
+        }
+
+        function renderMasterAdminTables() {
+            let users = JSON.parse(localStorage.getItem("usersList_v6")) || [];
+            const userTbody = document.getElementById("adminUsersTbody");
+            userTbody.innerHTML = "";
+
+            users.forEach((u, idx) => {
+                let roleColor = u.role === "superadmin" ? "color: #ef4444; font-weight: bold;" : (u.role === "author" ? "color: #10b981; font-weight: bold;" : "color: #475569;");
+                let actionBtns = "";
+
+                if (u.role !== "superadmin") {
+                    actionBtns = `
+                        <button class="btn-edit" style="padding: 2px 5px; font-size: 10px;" onclick="adminEditUser(${idx})">Edit</button>
+                        <button class="btn-delete" style="padding: 2px 5px; font-size: 10px;" onclick="adminDeleteUser(${idx})">Delete</button>
+                    `;
+                } else {
+                    actionBtns = `<span style="font-size: 10px; color: #64748b;">Protected</span>`;
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><b>${u.user}</b></td>
+                    <td>${u.pass}</td>
+                    <td style="${roleColor}">${u.role.toUpperCase()}</td>
+                    <td>${actionBtns}</td>
+                `;
+                userTbody.appendChild(tr);
+            });
+
+            let books = JSON.parse(localStorage.getItem("booksLibrary_v6")) || [];
+            const bookTbody = document.getElementById("adminBooksTbody");
+            bookTbody.innerHTML = "";
+
+            books.forEach((b, idx) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><b>${b.title}</b></td>
+                    <td>${b.author}</td>
+                    <td>${b.pages ? b.pages.length : 0} pahina</td>
+                    <td>
+                        <button class="btn-delete" style="padding: 2px 5px; font-size: 10px;" onclick="adminDeleteBook(${idx})">Burahin</button>
+                    </td>
+                `;
+                bookTbody.appendChild(tr);
+            });
+        }
+
+        function adminEditUser(index) {
+            let users = JSON.parse(localStorage.getItem("usersList_v6"));
+            let target = users[index];
+            let newRole = prompt(`Baguhin ang role ni ${target.user} (reader / author / superadmin):`, target.role);
+            if (newRole && ["reader", "author", "superadmin"].includes(newRole.trim())) {
+                users[index].role = newRole.trim();
+                users[index].status = newRole.trim();
+                localStorage.setItem("usersList_v6", JSON.stringify(users));
+                renderMasterAdminTables();
+                alert("Na-update na ang role!");
+            }
+        }
+
+        function adminDeleteUser(index) {
+            let users = JSON.parse(localStorage.getItem("usersList_v6"));
+            if (confirm(`Sigurado ka bang burahin ang account na si ${users[index].user}?`)) {
+                users.splice(index, 1);
+                localStorage.setItem("usersList_v6", JSON.stringify(users));
+                renderMasterAdminTables();
+            }
+        }
+
+        function adminDeleteBook(index) {
+            if (confirm("Burahin ang kwentong ito bilang Super Admin?")) {
+                let books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+                books.splice(index, 1);
+                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+                renderMasterAdminTables();
+            }
+        }
+
+        function adminResetEntireSystem() {
+            if (confirm("BABALA: Buburahin nito ang lahat ng custom books at ire-reset ang database sa v6 default. Ituloy?")) {
+                localStorage.removeItem("usersList_v6");
+                localStorage.removeItem("booksLibrary_v6");
+                alert("Na-reset na ang sistema. Mangyaring mag-log in ulit.");
+                location.reload();
+            }
+        }
+
+        function showSettingsView() {
+            document.getElementById("authView").classList.add("hidden");
+            document.getElementById("readingView").classList.add("hidden");
+            document.getElementById("libraryView").classList.add("hidden");
+            document.getElementById("uploadView").classList.add("hidden");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("settingsView").classList.remove("hidden");
+
+            const navRight = document.getElementById("navRight");
+            navRight.innerHTML = `
+                <button class="btn-outline" onclick="goToHome()">← Library</button>
+                <button class="btn-outline" onclick="handleLogout()">Logout</button>
+            `;
+
+            let applySectionHtml = "";
+            if (currentUser.role === "reader") {
+                if (currentUser.status === "pending_author") {
+                    applySectionHtml = `<p style="color: #f59e0b; font-size: 12px; font-weight: bold; margin-top: 5px;">⏳ Ang iyong aplikasyon para maging Author ay sinusuri na.</p>`;
+                } else {
+                    applySectionHtml = `<button class="btn-wattpad" style="background-color: #10b981; margin-top: 5px;" onclick="applyForAuthor()">Mag-apply para maging Author</button>`;
+                }
+            }
+
+            const settingsBox = document.getElementById("settingsBoxContent");
+            settingsBox.innerHTML = `
+                <div>
+                    <b>Baguhin ang Credentials</b>
+                    <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">I-update ang iyong username o password.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #475569;">Bagong Username:</label>
+                    <input type="text" id="editUser" value="${currentUser.user}" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                    
+                    <label style="font-size: 11px; font-weight: bold; color: #475569; margin-top: 4px;">Bagong Password:</label>
+                    <input type="password" id="editPass" value="${currentUser.pass}" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                    
+                    <button class="btn-wattpad" style="margin-top: 8px;" onclick="handleUpdateAccount()">I-save ang Pagbabago</button>
+                    ${applySectionHtml}
+                </div>
+            `;
+        }
+
+        function applyForAuthor() {
+            let users = JSON.parse(localStorage.getItem("usersList_v6"));
+            users = users.map(u => u.user === currentUser.user ? { ...u, status: "pending_author" } : u);
+            localStorage.setItem("usersList_v6", JSON.stringify(users));
+            currentUser.status = "pending_author";
+            alert("Naipadala na ang iyong aplikasyon sa Super Admin!");
+            showSettingsView();
+        }
+
+        function handleUpdateAccount() {
+            const newU = document.getElementById("editUser").value.trim();
+            const newP = document.getElementById("editPass").value.trim();
+
+            if (!newU || !newP) {
+                alert("Hindi pwedeng blangko!");
+                return;
+            }
+
+            showLoading("Binabago ang account details...");
+
+            setTimeout(() => {
+                let users = JSON.parse(localStorage.getItem("usersList_v6"));
+                if (users.some(u => u.user === newU && u.user !== currentUser.user)) {
+                    hideLoading();
+                    alert("Ginagamit na ang username na ito!");
+                    return;
+                }
+
+                const oldUsername = currentUser.user;
+                users = users.map(u => u.user === oldUsername ? { ...u, user: newU, pass: newP } : u);
+                localStorage.setItem("usersList_v6", JSON.stringify(users));
+
+                let books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+                books = books.map(b => b.author === oldUsername ? { ...b, author: newU } : b);
+                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+
+                currentUser.user = newU;
+                currentUser.pass = newP;
+
+                hideLoading();
+                goToHome();
+                alert("Na-update na ang account details!");
+            }, 300);
+        }
+
+        function renderBooksGrid() {
+            const books = JSON.parse(localStorage.getItem("booksLibrary_v6")) || [];
+            const bookmarks = JSON.parse(localStorage.getItem(`bookmarks_v6_${currentUser.user}`)) || {};
+            const grid = document.getElementById("booksGrid");
+            grid.innerHTML = "";
+
+            books.forEach((book, index) => {
+                const card = document.createElement("div");
+                card.className = "book-card";
+
+                let actionButtons = "";
+                if (currentUser.role === "author" || currentUser.role === "superadmin") {
+                    actionButtons = `
+                        <div class="card-actions">
+                            <button class="btn-edit" onclick="handleEditBook(${index})">Edit</button>
+                            <button class="btn-cover" onclick="handleEditCover(${index})">Cover</button>
+                            <button class="btn-delete" onclick="handleDeleteBook(${index})">Delete</button>
+                        </div>
+                    `;
+                }
+
+                let bgStyle = book.coverBg && book.coverBg.startsWith("data:image") 
+                    ? `background-image: url('${book.coverBg}');` 
+                    : `background: ${book.coverBg || 'linear-gradient(135deg, #6366f1, #a855f7)'};`;
+
+                let savedPage = bookmarks[index] !== undefined ? bookmarks[index] + 1 : null;
+                let bookmarkBadge = savedPage ? `<div style="font-size: 9px; color: var(--primary-color); font-weight: bold; margin-top: 3px;">📌 Pahina: ${savedPage}</div>` : '';
+
+                card.innerHTML = `
+                    <div class="book-cover-art" style="${bgStyle}" onclick="openBook(${index})">
+                        <span style="font-size: 9px; opacity: 0.8; background: rgba(0,0,0,0.4); padding: 2px 5px; border-radius: 3px; width: fit-content;">NOVEL</span>
+                        <div style="font-size: 14px; font-weight: bold; margin-top: 4px; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 3px; line-height: 1.2;">${book.title}</div>
+                    </div>
+                    <div class="book-info">
+                        <div>
+                            <p class="book-title" onclick="openBook(${index})">${book.title}</p>
+                            <p class="book-author">Ni: ${book.author || 'Author'}</p>
+                            ${bookmarkBadge}
+                        </div>
+                        ${actionButtons}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openBook(index) {
+            currentOpenBookIndex = index;
+            document.getElementById("libraryView").classList.add("hidden");
+            document.getElementById("settingsView").classList.add("hidden");
+            document.getElementById("uploadView").classList.add("hidden");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("readingView").classList.remove("hidden");
+
+            const navRight = document.getElementById("navRight");
+            navRight.innerHTML = `
+                <button class="btn-outline" onclick="goToHome()">← Library</button>
+                <button class="btn-outline" onclick="handleLogout()">Logout</button>
+            `;
+
+            loadBookReader(index);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function loadBookReader(bookIndex) {
+            const books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+            const bookData = books[bookIndex];
+
+            document.getElementById("readerBookTitle").textContent = bookData.title;
+            document.getElementById("readerAuthor").textContent = `Ni: ${bookData.author || 'Author'}`;
+
+            let bookmarks = JSON.parse(localStorage.getItem(`bookmarks_v6_${currentUser.user}`)) || {};
+            currentReaderPage = bookmarks[bookIndex] !== undefined ? bookmarks[bookIndex] : 0;
+
+            if (currentReaderPage >= bookData.pages.length) currentReaderPage = bookData.pages.length - 1;
+            if (currentReaderPage < 0) currentReaderPage = 0;
+
+            displayCurrentPage();
+        }
+
+        function displayCurrentPage() {
+            const books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+            const bookData = books[currentOpenBookIndex];
+            
+            document.getElementById("readerContent").innerHTML = bookData.pages[currentReaderPage];
+            
+            const totalPages = bookData.pages.length;
+            document.getElementById("reader-page-info").textContent = `${currentReaderPage + 1} / ${totalPages}`;
+
+            document.getElementById("prevBtn").disabled = (currentReaderPage === 0);
+            document.getElementById("nextBtn").disabled = (currentReaderPage === totalPages - 1);
+
+            let bookmarks = JSON.parse(localStorage.getItem(`bookmarks_v6_${currentUser.user}`)) || {};
+            bookmarks[currentOpenBookIndex] = currentReaderPage;
+            localStorage.setItem(`bookmarks_v6_${currentUser.user}`, JSON.stringify(bookmarks));
+
+            const mainContent = document.getElementById("mainContent");
+            if (mainContent) mainContent.scrollTop = 0;
+        }
+
+        function changeReaderPage(direction) {
+            const books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+            const bookData = books[currentOpenBookIndex];
+            let newPage = currentReaderPage + direction;
+            if (newPage >= 0 && newPage < bookData.pages.length) {
+                currentReaderPage = newPage;
+                displayCurrentPage();
+            }
+        }
+
+        function handleUploadNewBook() {
+            const fileInput = document.getElementById("wordFile");
+            const coverInput = document.getElementById("coverFile");
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Pumili muna ng Word (.docx) file!");
+                return;
+            }
+
+            showLoading("Binabasa ang Word file...");
+
+            const proceedUpload = (coverBgValue) => {
+                const reader = new FileReader();
+                reader.onload = function(loadEvent) {
+                    mammoth.convertToHtml({ arrayBuffer: loadEvent.target.result })
+                        .then(function(result) {
+                            let rawHtml = result.value.trim();
+                            if (!rawHtml) rawHtml = "<p>Walang nakitang text.</p>";
+                            
+                            showLoading("Hinahati ang mga pahina...");
+
+                            setTimeout(() => {
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = rawHtml;
+                                const elements = Array.from(tempDiv.children);
+                                if (elements.length === 0 && tempDiv.textContent.trim() !== "") {
+                                    const p = document.createElement('p');
+                                    p.textContent = tempDiv.textContent;
+                                    elements.push(p);
+                                }
+
+                                let pageChunks = [];
+                                let currentPageHtml = "";
+                                let charCount = 0;
+                                const MAX_CHARS_PER_PAGE = 1200;
+
+                                elements.forEach((el) => {
+                                    const textLength = el.textContent.length;
+                                    if (charCount + textLength > MAX_CHARS_PER_PAGE && currentPageHtml !== "") {
+                                        pageChunks.push(currentPageHtml);
+                                        currentPageHtml = "";
+                                        charCount = 0;
+                                    }
+                                    currentPageHtml += el.outerHTML;
+                                    charCount += textLength;
+                                });
+
+                                if (currentPageHtml !== "") pageChunks.push(currentPageHtml);
+
+                                let books = JSON.parse(localStorage.getItem("booksLibrary_v6")) || [];
+                                books.push({ 
+                                    title: file.name.replace('.docx', ''), 
+                                    author: currentUser.user, 
+                                    coverBg: coverBgValue, 
+                                    pages: pageChunks 
+                                });
+                                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+
+                                hideLoading();
+                                fileInput.value = "";
+                                coverInput.value = "";
+                                alert("Tagumpay na na-upload ang kwento!");
+                                goToHome();
+                            }, 50);
+                        })
+                        .catch(err => {
+                            hideLoading();
+                            alert("Error sa pagbasa ng .docx: " + err.message);
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            };
+
+            if (coverInput.files && coverInput.files[0]) {
+                showLoading("Pinoproseso ang cover image...");
+                const imgReader = new FileReader();
+                imgReader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        let w = img.width, h = img.height;
+                        if (w > h && w > 400) { h *= 400 / w; w = 400; }
+                        else if (h > 400) { w *= 400 / h; h = 400; }
+                        canvas.width = w; canvas.height = h;
+                        ctx.drawImage(img, 0, 0, w, h);
+                        proceedUpload(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
+                imgReader.readAsDataURL(coverInput.files[0]);
+            } else {
+                proceedUpload("linear-gradient(135deg, #6366f1, #a855f7)");
+            }
+        }
+
+        function handleDeleteBook(index) {
+            if (confirm("Burahin ang kwentong ito?")) {
+                let books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+                books.splice(index, 1);
+                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+                renderBooksGrid();
+            }
+        }
+
+        function handleEditBook(index) {
+            let books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+            let newTitle = prompt("Bagong pamagat:", books[index].title);
+            if (newTitle !== null && newTitle.trim() !== "") {
+                books[index].title = newTitle.trim();
+                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+                renderBooksGrid();
+            }
+        }
+
+        function handleEditCover(index) {
+            let books = JSON.parse(localStorage.getItem("booksLibrary_v6"));
+            let choice = prompt("Pumili:\n1. Bagong kulay ng gradient\n2. Mag-upload ng picture", "1");
+            if (choice === "1") {
+                let gradients = {
+                    "1": "linear-gradient(135deg, #6366f1, #a855f7)",
+                    "2": "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                    "3": "linear-gradient(135deg, #ec4899, #8b5cf6)",
+                    "4": "linear-gradient(135deg, #10b981, #06b6d4)",
+                    "5": "linear-gradient(135deg, #1e293b, #0f172a)"
+                };
+                let c = prompt("Pumili ng Gradient (1-5):\n1. Indigo\n2. Blue\n3. Pink\n4. Emerald\n5. Dark");
+                if (gradients[c]) {
+                    books[index].coverBg = gradients[c];
+                    localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+                    renderBooksGrid();
+                }
+            } else if (choice === "2") {
+                let input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = e => {
+                    let file = e.target.files[0];
+                    if (file) {
+                        showLoading("Binabago ang cover...");
+                        let reader = new FileReader();
+                        reader.onload = event => {
+                            let img = new Image();
+                            img.onload = function() {
+                                let canvas = document.createElement('canvas');
+                                let ctx = canvas.getContext('2d');
+                                let w = img.width, h = img.height;
+                                if (w > h && w > 400) { h *= 400 / w; w = 400; }
+                                else if (h > 400) { w *= 400 / h; h = 400; }
+                                canvas.width = w; canvas.height = h;
+                                ctx.drawImage(img, 0, 0, w, h);
+                                books[index].coverBg = canvas.toDataURL('image/jpeg', 0.7);
+                                localStorage.setItem("booksLibrary_v6", JSON.stringify(books));
+                                hideLoading();
+                                renderBooksGrid();
+                                alert("Na-update na ang cover!");
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            document.getElementById("libraryView").classList.add("hidden");
+            document.getElementById("settingsView").classList.add("hidden");
+            document.getElementById("readingView").classList.add("hidden");
+            document.getElementById("uploadView").classList.add("hidden");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("authView").classList.remove("hidden");
+            document.getElementById("username").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("navRight").innerHTML = "";
+        }
+    </script>
+</body>
+</html>
