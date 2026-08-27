@@ -596,10 +596,15 @@
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
             }
+            
+            // Ayusin ang pag-alis ng flip book para hindi maging blangko
             if (pageFlip) {
-                try { pageFlip.destroy(); } catch(e){}
+                try { 
+                    pageFlip.destroy(); 
+                } catch(e){}
                 pageFlip = null;
             }
+            document.getElementById("book").innerHTML = "";
 
             document.getElementById("authView").classList.add("hidden");
             document.getElementById("readingView").classList.add("hidden");
@@ -828,21 +833,23 @@
 
             pageFlip.loadFromHTML(document.querySelectorAll('.page'));
             
-            // AUTOMATIC RESUME KUNG SAAN INIWAN
+            // Ligtas na pag-apply ng automatic resume pagkatapos mag-load nang buo ang libro
             let bookmarks = JSON.parse(localStorage.getItem(`bookmarks_${currentUser.user}`)) || {};
             let lastPage = bookmarks[bookIndex] !== undefined ? bookmarks[bookIndex] : 0;
 
             if (lastPage > 0) {
                 setTimeout(() => {
-                    pageFlip.turnToPage(lastPage);
-                }, 200);
+                    if (pageFlip) {
+                        pageFlip.turnToPage(lastPage);
+                    }
+                }, 300);
             }
 
+            // Siguraduhing maayos ang pag-save ng progress nang hindi nade-delay nang husto
             pageFlip.on('flip', (e) => {
                 const totalPages = pageFlip.getPageCount();
                 document.getElementById('page-info').textContent = `${e.data + 1} / ${totalPages}`;
 
-                // I-save agad ang progress nang automatic
                 let bookmarks = JSON.parse(localStorage.getItem(`bookmarks_${currentUser.user}`)) || {};
                 bookmarks[bookIndex] = e.data;
                 localStorage.setItem(`bookmarks_${currentUser.user}`, JSON.stringify(bookmarks));
@@ -1059,6 +1066,7 @@
                 try { pageFlip.destroy(); } catch(e){}
                 pageFlip = null;
             }
+            document.getElementById("book").innerHTML = "";
             document.getElementById("libraryView").classList.add("hidden");
             document.getElementById("settingsView").classList.add("hidden");
             document.getElementById("readingView").classList.add("hidden");
